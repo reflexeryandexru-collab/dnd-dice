@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- d20: шестиугольник с вписанным треугольником, в безопасной зоне 66dp -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path
+        android:fillColor="#2B2219"
+        android:strokeColor="#E0B552"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M54,24 L80,39 L80,69 L54,84 L28,69 L28,39 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E0B552"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:pathData="M54,38 L70,64 L38,64 Z M54,24 L54,38 M80,39 L70,64 M28,39 L38,64 M54,84 L70,64 M54,84 L38,64 M28,69 L38,64 M80,69 L70,64 M28,39 L54,38 M80,39 L54,38" />
+</vector>
