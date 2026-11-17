@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#14100c">
+<title>Кости — бросок кубиков D&amp;D</title>
+<style>
+  :root{
+    --bg:#14100c; --panel:#211a13; --panel2:#2b2219; --line:#4a3a28;
+    --ink:#efe3cc; --muted:#a8957a; --gold:#e0b552; --gold2:#b8862c;
+    --red:#d2463c; --green:#6fbf73; --blue:#7aa6d9;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Georgia,"Times New Roman",serif;}
+  body{min-height:100vh;
+    background:radial-gradient(ellipse at top,#2a1f14 0%,var(--bg) 60%);}
+  .wrap{max-width:480px;margin:0 auto;padding:14px 14px 120px}
+  h1{font-size:22px;text-align:center;margin:6px 0 14px;letter-spacing:1px;color:var(--gold)}
+  h1 span{color:var(--muted);font-size:14px;display:block;letter-spacing:0;font-style:italic}
+
+  .card{background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;
+    box-shadow:0 2px 0 rgba(0,0,0,.4) inset, 0 6px 18px rgba(0,0,0,.35)}
+  .label{font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin:0 0 8px 2px}
+
+  /* Dice grid */
+  .dice{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .die{position:relative;background:#1a140e;border:1px solid var(--line);border-radius:12px;
+    padding:10px 4px 8px;text-align:center;user-select:none;cursor:pointer;
+    transition:transform .08s,border-color .15s}
+  .die:active{transform:scale(.95)}
+  .die.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold2) inset}
+  .die svg{width:34px;height:34px;display:block;margin:0 auto 4px}
+  .die .nm{font-weight:bold;font-size:15px}
+  .die .cnt{position:absolute;top:-7px;right:-7px;min-width:24px;height:24px;border-radius:12px;
+    background:var(--gold);color:#1a120a;font:bold 13px/24px system-ui,sans-serif;padding:0 6px;display:none}
+  .die.on .cnt{display:block}
+  .die .minus{position:absolute;top:-7px;left:-7px;width:24px;height:24px;border-radius:12px;
+    background:#3a2c1f;color:var(--ink);border:1px solid var(--line);
+    font:bold 15px/21px system-ui,sans-serif;display:none}
+  .die.on .minus{display:block}
+  .hint{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;font-style:italic}
+
+  /* Pool summary */
+  .pool{font:600 17px/1.3 system-ui,sans-serif;text-align:center;min-height:24px;color:var(--ink)}
+  .pool.empty{color:var(--muted);font-weight:400;font-style:italic;font-family:Georgia,serif}
+
+  /* Modifier */
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .btn{background:#3a2c1f;border:1px solid var(--line);color:var(--ink);border-radius:10px;
+    font:600 18px system-ui,sans-serif;min-width:44px;height:44px;cursor:pointer}
+  .btn:active{transform:scale(.95)}
+  .modval{font:700 24px system-ui,sans-serif;min-width:54px;text-align:center}
+  .quick{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .quick button{flex:1;min-width:40px;height:36px;font-size:14px}
+
+  /* Adv toggle */
+  .seg{display:flex;background:#1a140e;border:1px solid var(--line);border-radius:12px;padding:3px}
+  .seg button{flex:1;background:none;border:0;color:var(--muted);height:40px;border-radius:9px;
+    font:600 14px system-ui,sans-serif;cursor:pointer}
+  .seg button.sel{background:#3a2c1f;color:var(--ink)}
+  .seg button.sel.adv{color:var(--green)} .seg button.sel.dis{color:var(--red)}
+  .advnote{font-size:12px;color:var(--muted);margin-top:6px;text-align:center;font-style:italic}
+
+  /* Result */
+  .result{text-align:center;padding:16px 12px}
+  .total{font:800 72px/1 system-ui,sans-serif;color:var(--gold);
+    text-shadow:0 0 24px rgba(224,181,82,.35);margin:4px 0 6px}
+  .total.crit{color:var(--gold);animation:glow 1.2s ease-in-out infinite alternate}
+  .total.fail{color:var(--red);text-shadow:0 0 24px rgba(210,70,60,.4)}
+  @keyframes glow{from{text-shadow:0 0 14px rgba(224,181,82,.4)}to{text-shadow:0 0 40px rgba(255,210,90,.9)}}
+  .formula{font:500 14px system-ui,sans-serif;color:var(--muted);margin-bottom:10px}
+  .banner{font:800 16px system-ui,sans-serif;letter-spacing:3px;margin-bottom:6px;min-height:20px}
+  .banner.crit{color:var(--gold)} .banner.fail{color:var(--red)}
+  .groups{display:flex;flex-direction:column;gap:8px;text-align:left}
+  .grp{display:flex;align-items:flex-start;gap:8px}
+  .grp .gname{font:700 13px system-ui,sans-serif;color:var(--muted);min-width:48px;padding-top:7px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+  .chip{min-width:36px;height:34px;padding:0 8px;border-radius:9px;background:#1a140e;
+    border:1px solid var(--line);font:700 16px/32px system-ui,sans-serif;text-align:center}
+  .chip.max{border-color:var(--gold2)}
+  .chip.n20{background:var(--gold);color:#1a120a;border-color:var(--gold)}
+  .chip.n1{background:var(--red);color:#fff;border-color:var(--red)}
+  .chip.drop{opacity:.35;text-decoration:line-through}
+  .chip.pair{display:flex;gap:4px;padding:0 6px;align-items:center}
+  .chip.pair span{display:inline-block;min-width:22px}
+  .chip.pair .k.n20{color:var(--gold)} .chip.pair .k.n1{color:var(--red)}
+  .chip.pair .d{opacity:.35;text-decoration:line-through}
+  .gsum{font:600 13px system-ui,sans-serif;color:var(--muted);padding-top:8px;min-width:30px;text-align:right}
+  .rolling .chip,.rolling .total{animation:shake .12s linear infinite}
+  @keyframes shake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-1px,1px) rotate(-3deg)}
+    50%{transform:translate(1px,-1px) rotate(3deg)}75%{transform:translate(-1px,-1px) rotate(-2deg)}}
+
+  /* Bottom bar */
+  .bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(20,16,12,0),var(--bg) 35%)}
+  .bar .in{max-width:480px;margin:0 auto;display:flex;gap:10px}
+  .roll{flex:1;height:58px;border-radius:14px;border:1px solid #f0c96a;cursor:pointer;
+    background:linear-gradient(180deg,#e9bf5c,#b8862c);color:#1a120a;
+    font:800 20px system-ui,sans-serif;letter-spacing:2px;text-transform:uppercase;
+    box-shadow:0 6px 20px rgba(224,181,82,.25)}
+  .roll:active{transform:scale(.98)}
+  .roll:disabled{opacity:.4}
+  .clear{width:58px;height:58px;border-radius:14px;background:#2b2219;border:1px solid var(--line);
+    color:var(--muted);font:600 13px system-ui,sans-serif;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚔ Кости ⚔<span>набери кубы и бросай</span></h1>
+
+  <div class="card">
+    <div class="label">Кубы</div>
+    <div class="dice" id="dice"></div>
+    <div class="hint">Нажми на куб, чтобы добавить. «−», чтобы убрать.</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Бросок</div>
+    <div class="pool empty" id="pool">Кубы не выбраны</div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="label" style="margin:0">Бонус</div>
+      <div class="stepper">
+        <button class="btn" id="modMinus">−</button>
+        <div class="modval" id="modVal">+0</div>
+        <button class="btn" id="modPlus">+</button>
+      </div>
+    </div>
+    <div class="quick" id="quick"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">d20</div>
+    <div class="seg" id="adv">
+      <button data-m="dis" class="dis">Помеха</button>
+      <button data-m="none" class="sel">Обычно</button>
+      <button data-m="adv" class="adv">Преимущ.</button>
+    </div>
+    <div class="advnote" id="advNote">Каждый d20 бросается один раз</div>
+  </div>
+
+  <div class="card result" id="resultCard" style="display:none">
+    <div class="banner" id="banner"></div>
+    <div class="total" id="total">0</div>
+    <div class="formula" id="formula"></div>
+    <div class="groups" id="groups"></div>
+  </div>
+</div>
+
+<div class="bar"><div class="in">
+  <button class="clear" id="clear">Сброс</button>
+  <button class="roll" id="roll" disabled>Бросить</button>
+</div></div>
+
+<script>
+(function(){
+  var DICE=[4,6,8,10,12,20,100];
+  var counts={}; DICE.forEach(function(d){counts[d]=0});
+  var mod=0, advMode='none';
+
+  // Simple polygon icons per die
+  function icon(d){
+    var s='stroke="#e0b552" stroke-width="2" fill="#2b2219" stroke-linejoin="round"';
+    var p={
+      4:'<polygon points="20,4 36,34 4,34" '+s+'/>',
+      6:'<rect x="6" y="6" width="28" height="28" rx="3" '+s+'/>',
+      8:'<polygon points="20,3 36,20 20,37 4,20" '+s+'/>',
+      10:'<polygon points="20,3 36,16 20,37 4,16" '+s+'/><polyline points="4,16 20,22 36,16" fill="none" stroke="#e0b552" stroke-width="1.5"/>',
+      12:'<polygon points="20,3 35,13 31,33 9,33 5,13" '+s+'/>',
+      20:'<polygon points="20,2 36,11 36,29 20,38 4,29 4,11" '+s+'/><polygon points="20,10 30,27 10,27" fill="none" stroke="#e0b552" stroke-width="1.5"/>',
+      100:'<circle cx="14" cy="21" r="10" '+s+'/><circle cx="27" cy="19" r="10" '+s+'/>'
+    }[d];
+    return '<svg viewBox="0 0 40 40">'+p+'</svg>';
+  }
+
+  // Unbiased random 1..n
+  function rnd(n){
+    var max=Math.floor(4294967296/n)*n, a=new Uint32Array(1);
+    do{crypto.getRandomValues(a)}while(a[0]>=max);
+    return (a[0]%n)+1;
+  }
+
+  var diceEl=document.getElementById('dice');
+  DICE.forEach(function(d){
+    var el=document.createElement('div');
+    el.className='die'; el.dataset.d=d;
+    el.innerHTML=icon(d)+'<div class="nm">d'+d+'</div><div class="cnt">0</div><button class="minus" aria-label="убрать">−</button>';
+    el.addEventListener('click',function(e){
+      if(e.target.classList.contains('minus')){counts[d]=Math.max(0,counts[d]-1)}
+      else{counts[d]=Math.min(99,counts[d]+1)}
+      render();
+    });
+    diceEl.appendChild(el);
+  });
+
+  var quick=document.getElementById('quick');
+  [-2,-1,0,1,2,3,5].forEach(function(v){
+    var b=document.createElement('button'); b.className='btn';
+    b.textContent=v>0?'+'+v:(v===0?'0':'−'+Math.abs(v));
+    b.onclick=function(){mod=v;render()}; quick.appendChild(b);
+  });
+
+  document.getElementById('modMinus').onclick=function(){mod=Math.max(-99,mod-1);render()};
+  document.getElementById('modPlus').onclick=function(){mod=Math.min(99,mod+1);render()};
+
+  var notes={none:'Каждый d20 бросается один раз',
+    adv:'Каждый d20 бросается дважды, берётся больший',
+    dis:'Каждый d20 бросается дважды, берётся меньший'};
+  document.querySelectorAll('#adv button').forEach(function(b){
+    b.onclick=function(){
+      advMode=b.dataset.m;
+      document.querySelectorAll('#adv button').forEach(function(x){x.classList.toggle('sel',x===b)});
+      document.getElementById('advNote').textContent=notes[advMode];
+    };
+  });
+
+  function fmtMod(m){return m>0?'+'+m:(m<0?'−'+Math.abs(m):'+0')}
+  function poolText(){
+    var parts=DICE.filter(function(d){return counts[d]>0}).map(function(d){return counts[d]+'d'+d});
+    if(!parts.length) return '';
+    var t=parts.join(' + ');
+    if(mod) t+=(mod>0?' + ':' − ')+Math.abs(mod);
+    return t;
+  }
+
+  function render(){
+    document.querySelectorAll('.die').forEach(function(el){
+      var c=counts[el.dataset.d];
+      el.classList.toggle('on',c>0); el.querySelector('.cnt').textContent=c;
+    });
+    document.getElementById('modVal').textContent=fmtMod(mod);
+    var t=poolText(), p=document.getElementById('pool');
+    p.textContent=t||'Кубы не выбраны'; p.classList.toggle('empty',!t);
+    document.getElementById('roll').disabled=!t;
+  }
+
+  function doRoll(){
+    var groups=[], sum=0, has20=false, any20=false, any1=false, all1=true;
+    DICE.forEach(function(d){
+      var n=counts[d]; if(!n) return;
+      var items=[], gs=0;
+      for(var i=0;i<n;i++){
+        if(d===20 && advMode!=='none'){
+          var a=rnd(20), b=rnd(20);
+          var k=advMode==='adv'?Math.max(a,b):Math.min(a,b);
+          var keepFirst=(k===a);
+          items.push({pair:true,a:a,b:b,k:k,keepFirst:keepFirst});
+          gs+=k;
+        } else {
+          var v=rnd(d); items.push({v:v,k:v}); gs+=v;
+        }
+        if(d===20){
+          has20=true;
+          var kv=items[items.length-1].k;
+          if(kv===20) any20=true;
+          if(kv===1) any1=true; else all1=false;
+        }
+      }
+      groups.push({d:d,items:items,sum:gs}); sum+=gs;
+    });
+    return {groups:groups,total:sum+mod,has20:has20,any20:any20,any1:any1};
+  }
+
+  function chipHTML(d,it){
+    if(it.pair){
+      function cls(v,kept){var c=kept?'k':'d'; if(kept&&v===20)c+=' n20'; if(kept&&v===1)c+=' n1'; return c}
+      var keptA=it.keepFirst, keptB=!it.keepFirst;
+      var outer='chip pair'+(it.k===20?' max':'');
+      return '<div class="'+outer+'"><span class="'+cls(it.a,keptA)+'">'+it.a+'</span>/<span class="'+cls(it.b,keptB)+'">'+it.b+'</span></div>';
+    }
+    var c='chip';
+    if(d===20&&it.v===20)c+=' n20';
+    else if(d===20&&it.v===1)c+=' n1';
+    else if(it.v===d)c+=' max';
+    return '<div class="'+c+'">'+it.v+'</div>';
+  }
+
+  function show(res,final){
+    var card=document.getElementById('resultCard');
+    card.style.display='block';
+    var tot=document.getElementById('total'), ban=document.getElementById('banner');
+    tot.textContent=res.total;
+    tot.className='total'; ban.className='banner'; ban.textContent='';
+    if(final && res.has20){
+      if(res.any20){tot.classList.add('crit');ban.classList.add('crit');ban.textContent='✦ НАТУРАЛЬНАЯ 20 ✦'}
+      else if(res.any1){tot.classList.add('fail');ban.classList.add('fail');ban.textContent='✖ НАТУРАЛЬНАЯ 1 ✖'}
+    }
+    var f=poolText();
+    if(res.has20 && advMode!=='none') f+=advMode==='adv'?' · преимущество':' · помеха';
+    document.getElementById('formula').textContent=f;
+    document.getElementById('groups').innerHTML=res.groups.map(function(g){
+      return '<div class="grp"><div class="gname">d'+g.d+'</div><div class="chips">'+
+        g.items.map(function(it){return chipHTML(g.d,it)}).join('')+
+        '</div><div class="gsum">'+(g.items.length>1?'= '+g.sum:'')+'</div></div>';
+    }).join('') + (mod?'<div class="grp"><div class="gname">бонус</div><div class="chips"><div class="chip">'+fmtMod(mod)+'</div></div><div class="gsum"></div></div>':'');
+  }
+
+  var busy=false;
+  document.getElementById('roll').onclick=function(){
+    if(busy||!poolText()) return; busy=true;
+    var card=document.getElementById('resultCard');
+    card.classList.add('rolling');
+    if(navigator.vibrate) navigator.vibrate(30);
+    var ticks=0, iv=setInterval(function(){
+      show(doRoll(),false);
+      if(++ticks>=8){
+        clearInterval(iv); card.classList.remove('rolling');
+        var r=doRoll(); show(r,true);
+        if(navigator.vibrate && r.has20 && (r.any20||r.any1)) navigator.vibrate([40,60,40]);
+        busy=false;
+      }
+    },60);
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+  };
+
+  document.getElementById('clear').onclick=function(){
+    DICE.forEach(function(d){counts[d]=0}); mod=0;
+    document.getElementById('resultCard').style.display='none';
+    render();
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
